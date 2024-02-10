@@ -52,8 +52,8 @@ def add_channel_step(message):
                 logger.warning(f'Канал с ID {channel_id} не существует или некорректный ID')
                 send_update_keyboard(message, "Канал не существует или некорректный ID")
         else:
-            logger.warning(f'Канал с ID {channel_id} существует')
-            send_update_keyboard(message, "Канал уже существует")
+            logger.warning(f'Канал с ID {channel_id} уже добавлен')
+            send_update_keyboard(message, "Канал уже добавлен")
     except Exception as e:
           logger.error(f'Ошибка при добавлении канала: {e}')
 
@@ -65,25 +65,36 @@ def list_channels(message):
     logger.info(f'Запрос списка каналов...')
     if channels:
         markup = types.InlineKeyboardMarkup()
-        for channel_id, last_video_id, channel_name in channels:
-            btn_channel = types.InlineKeyboardButton(text=channel_name, callback_data=f"info_{channel_id}")
-            btn_delete = types.InlineKeyboardButton(text="Удалить канал", callback_data=f"delete_{channel_id}")
-            markup.add(btn_channel, btn_delete)
-        logger.info(f'Колличество каналов: {len(channels)}')
-        bot.send_message(message.chat.id, "Список каналов:", reply_markup=markup)
+        for row in channels:
+            # Убедимся, что в строке есть достаточно данных для распаковки
+            if len(row) >= 3:
+                channel_id, last_video_id, channel_name = row[0], row[1], row[2]
+                btn_channel = types.InlineKeyboardButton(text=channel_name, callback_data=f"info_{channel_id}")
+                btn_delete = types.InlineKeyboardButton(text="Удалить канал", callback_data=f"delete_{channel_id}")
+                markup.add(btn_channel, btn_delete)
+            else:
+                logger.warning(f'Некорректный формат строки в базе: {row}')
+        if markup.keyboard:
+            logger.info(f'Количество каналов: {len(markup.keyboard)}')
+            bot.send_message(message.chat.id, "Список каналов:", reply_markup=markup)
+        else:
+            logger.info('Список каналов пуст.')
+            bot.send_message(message.chat.id, "Список каналов пуст.")
     else:
-        logger.info(f'Список каналов пуст.')
+        logger.info('Список каналов пуст.')
         bot.send_message(message.chat.id, "Список каналов пуст.")
 
 @bot.callback_query_handler(func=lambda call: call.data.startswith('delete_'))
 def callback_query_del(call):
-    channel_id = call.data.split('_')[1]
+    logger.debug(call.data)
+    channel_id = call.data.split("delete_", 1)[1]
     delete_channel_from_csv(channel_id)
     bot.answer_callback_query(call.id, "Канал удалён")
     list_channels(call.message)
 
 # Удаление канала из базы
 def delete_channel_from_csv(channel_id):
+    logger.info(channel_id)
     channels = read_channels_from_csv()
     try:
         with open(config.csv_file_name, mode='w', encoding='utf-8', newline='') as csv_file:
@@ -93,19 +104,20 @@ def delete_channel_from_csv(channel_id):
             for row in channels:
                 if row[0] != channel_id:
                     csv_writer.writerow(row)
-            logger.info('Канал успешно удален из базы')        
+            logger.info(f'Канал {channel_id} успешно удален из базы')        
     except Exception as e:
         logger.error(f'Ошибка при удалении канала из базы: {e}')
 
 # Проверка существования канала в базе
 def check_channel_id(channel_id):
-    logger.info(f'Проверка базы...')
+    logger.info('Проверка базы...')
     try:
         with open(config.csv_file_name, mode='r', encoding='utf-8') as csv_file:
             csv_reader = csv.reader(csv_file)
-            next(csv_reader, None)
+            next(csv_reader, None)  # Пропускаем заголовок, если он есть
             for row in csv_reader:
-                if row[0] == channel_id:
+                # Проверяем, что строка содержит хотя бы один элемент
+                if len(row) > 0 and row[0] == channel_id:
                     return True
             return False
     except Exception as e:

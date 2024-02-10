@@ -13,14 +13,12 @@ def get_channel_id_by_url(url):
         path = parsed_url.path.split('/')
         query = parsed_url.query
         # Проверка на стандартный URL канала
-        logger.info('Проверка на стандартный URL канала ...')
         if 'channel' in path:
             channel_id = path[path.index('channel') + 1]
             logger.info(f'Стандартный URL. ID канала: {channel_id}')
             return channel_id
         # Обработка кастомного URL канала
         elif '@' in url:
-            logger.info('Обработка кастомного URL канала...')
             custom_id = path[-1]  # Предполагаем, что кастомный ID находится после символа '@'
             request = youtube.search().list(q=custom_id, type='channel', part='snippet', maxResults=1)
             response = request.execute()
