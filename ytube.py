@@ -26,7 +26,7 @@ def get_channel_id_by_url(url):
                 channel_id = response['items'][0]['id']['channelId']
                 logger.info(f'Кастомный URL. ID канала: {channel_id}')
                 return channel_id
-        logger.info(f'Неизвестный URL. Предпологаемый ID канала: {channel_id}')
+        logger.info(f'Неизвестный URL')
         return url
     except ValueError as e:
         logger.error(f'Ошибка при анализе URL: {e}')
