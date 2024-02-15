@@ -50,7 +50,7 @@ try:
         
     # Получение имени канала и ID последнего видео
     def get_channel_info(channel_id):
-        logger.info('Получение имени канала и ID последнего видео ...')
+        #logger.info('Получение имени канала и ID последнего видео ...')
         response = youtube.channels().list(
             part="snippet,contentDetails",
             id=channel_id,

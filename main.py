@@ -1,6 +1,9 @@
 import csv
 import telebot
 import config
+import schedule
+import time
+from threading import Thread
 from telebot import types
 from ytube import *
 from loguru import logger
@@ -146,6 +149,48 @@ def read_channels_from_csv():
     except Exception as e:
         logger.error(f'Ошибка при чтении каналов из базы: {e}')
 
+
+def check_last_video():
+    logger.info('Запуск проверки обновлений видео...')
+    channels = read_channels_from_csv()
+    for channel in channels:
+        channel_id, last_video_id, channel_name = channel[0], channel[1], channel[2]
+        logger.info(f'Проверка канала: {channel_name}')
+        real_channel_name, new_video_id = get_channel_info(channel_id)
+        if new_video_id != last_video_id:
+            logger.info(f'Новый видео: {new_video_id}')
+            public_new_video(real_channel_name, new_video_id)
+            change_last_video_id(channel_id, new_video_id, real_channel_name)
+
+def change_last_video_id(channel_id, last_video_id, channel_name):
+    try:
+        # Считывание всего содержимого файла
+        rows = []
+        with open(config.csv_file_name, mode='r', encoding='utf-8') as csv_file:
+            csv_reader = csv.reader(csv_file)
+            for row in csv_reader:
+                if row:  # Проверка на пустую строку
+                    # Если ID канала совпадает, обновляем last_video_id
+                    if row[0] == channel_id:
+                        row[1] = last_video_id
+                        logger.info(f'Канал {channel_name} успешно обновлен')
+                    rows.append(row)
+        
+        # Перезапись файла с обновленными данными
+        with open(config.csv_file_name, mode='w', encoding='utf-8', newline='') as csv_file:
+            csv_writer = csv.writer(csv_file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+            csv_writer.writerows(rows)
+
+    except Exception as e:
+        logger.error(f'Ошибка при обновлении канала: {e}')
+
+
+def public_new_video(channel_name, new_video_id):
+    logger.info(f'Отправка нового видео: {channel_name} - {new_video_id}')
+    msg = f"На канале {channel_name} опубликовано новое видео https://www.youtube.com/watch?v={new_video_id}"
+    bot.send_message(config.CHANNEL_NAME, msg)
+
+
 # Обновление клавиатуры
 def send_update_keyboard(message, message_text):
     markup = types.ReplyKeyboardMarkup(resize_keyboard=True, row_width=2)
@@ -153,6 +198,16 @@ def send_update_keyboard(message, message_text):
     btn_list = types.KeyboardButton("Список каналов")
     markup.add(btn_add, btn_list)
     bot.send_message(message.chat.id, message_text, reply_markup=markup)
+
+schedule.every(config.CHECK_INTERVAL).seconds.do(check_last_video)
+def run_scheduler():
+    while True:
+        schedule.run_pending()
+        time.sleep(1)
+
+scheduler_thread = Thread(target=run_scheduler)
+scheduler_thread.start()
+
 
 
 
