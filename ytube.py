@@ -1,8 +1,12 @@
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError, Error
 from urllib.parse import urlparse, parse_qs
-import config
 from loguru import logger
+import configparser
+
+config = configparser.ConfigParser()
+config.read('config.ini')
+youtube_api_key = config.get('Settings', 'youtube_api_key')
 
 
 # Функция преобразования URL канала в идентификатор канала
@@ -33,7 +37,7 @@ def get_channel_id_by_url(url):
 
 
 try:
-    youtube = build('youtube', 'v3', developerKey=config.youtube_api_key)
+    youtube = build('youtube', 'v3', developerKey=youtube_api_key)
 
     # Проверка существования канала
     def check_channel_exists(channel_id):
@@ -64,15 +68,19 @@ try:
             part="snippet",
             playlistId=uploads_playlist_id,
             maxResults=1 
-        ).execute()
+        ).execute()        
 
         if playlist_response['items']:
+            #logger.debug(playlist_response['items'])
             last_video_id = playlist_response['items'][0]['snippet']['resourceId']['videoId']
-            logger.info(f'Имя канала: {channel_name}, ID последнего видео: {last_video_id}')
-            return channel_name, last_video_id
+            publish_date = playlist_response['items'][0]['snippet']['publishedAt']
+            #logger.info(f'Имя канала: {channel_name}')
+            logger.info(f'Id последнего видео: {last_video_id}')
+            logger.info(f'Дата публикации: {publish_date}')
+            return channel_name, last_video_id, publish_date 
         else:
             logger.info(f'Имя канала: {channel_name}, видео в плейлисте не найдено.')
-            return channel_name, None
+            return channel_name, None, None
 
 except HttpError as e:
     logger.error(f'Произошла ошибка HTTP: {e.resp.status}, {e.content}')
