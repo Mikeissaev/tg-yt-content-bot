@@ -11,7 +11,7 @@ import configparser
 
 try:
     config = configparser.ConfigParser()
-    config.read('/home/mikeissaev/Python/DriftTubeBot/config.ini')
+    config.read('config.ini')
 
     csv_file_name = config.get('Settings', 'csv_file_name')
     channel = config.get('Settings', 'channel')
