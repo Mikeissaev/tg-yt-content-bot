@@ -59,6 +59,8 @@ try:
     @bot.message_handler(func=lambda message: message.text == 'Проверить новые публикации', content_types=['text'])
     def check_new_video_btn(message):
         check_last_video()
+        send_update_keyboard(message, "Проверка завершена 👌")
+        
 
     # Функция проверки и добавления канала в базу
     def add_channel_step(message):
