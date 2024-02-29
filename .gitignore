@@ -1,4 +1,7 @@
+.gitignore
 config.ini
+channels.csv
 tg-yt-content-bot.service
 __pycache__/
 venv/
+logs/
