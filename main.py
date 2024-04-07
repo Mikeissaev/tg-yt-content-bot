@@ -12,7 +12,6 @@ import configparser
 try:
     config = configparser.ConfigParser()
     config.read('config.ini')
-
     csv_file_name = config.get('Settings', 'csv_file_name')
     channel = config.get('Settings', 'channel')
     check_interval = config.get('Settings', 'check_interval')
@@ -40,10 +39,10 @@ try:
             logger.info(f'Пользователь {user_id} - OK')
             markup = types.ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True)
             btn_add = types.KeyboardButton("Добавить канал")
-            btn_list = types.KeyboardButton("Список каналов")
+            #btn_list = types.KeyboardButton("Список каналов")
             btn_check = types.KeyboardButton("Проверить новые публикации")
             markup.add(btn_add)
-            markup.add(btn_list)
+            #markup.add(btn_list)
             markup.add(btn_check)        
             bot.send_message(message.chat.id, 'Привет! Выбери действие', reply_markup=markup)
     except Exception as e:
@@ -254,10 +253,10 @@ try:
     def send_update_keyboard(message, message_text):
         markup = types.ReplyKeyboardMarkup(resize_keyboard=True, row_width=2)
         btn_add = types.KeyboardButton("Добавить канал")
-        btn_list = types.KeyboardButton("Список каналов")
+        #btn_list = types.KeyboardButton("Список каналов")
         btn_check = types.KeyboardButton("Проверить новые публикации")
         markup.add(btn_add)
-        markup.add(btn_list)
+        #markup.add(btn_list)
         markup.add(btn_check)
         bot.send_message(message.chat.id, message_text, reply_markup=markup)
 
